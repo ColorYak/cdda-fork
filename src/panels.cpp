@@ -677,7 +677,7 @@ static void draw_right_win( catacurses::window &w,
 }
 
 static void draw_center_win( catacurses::window &w, int col_width, const input_context &ctxt,
-                             const widget &sidebar, const std::map<size_t, size_t> &row_indices,
+                             const widget *sidebar, const std::map<size_t, size_t> &row_indices,
                              const std::vector<window_panel> &panels, size_t current_row, bool left_panel )
 {
     werase( w );
@@ -701,8 +701,8 @@ static void draw_center_win( catacurses::window &w, int col_width, const input_c
                 break;
             }
         }
-    } else {
-        fold_and_print( w, point( 1, 7 ), col_width - 2, c_white, _( sidebar._description ) );
+    } else if( sidebar != nullptr ) {
+        fold_and_print( w, point( 1, 7 ), col_width - 2, c_white, _( sidebar->_description ) );
     }
 
     wnoutrefresh( w );
@@ -775,7 +775,7 @@ void panel_manager::show_adm()
             panel_layout layout = it->second;
             sidebar = get_sidebar( layout.name() );
         }
-        draw_center_win( w_center, column_widths[1], ctxt, *sidebar, row_indices, panels, current_row,
+        draw_center_win( w_center, column_widths[1], ctxt, sidebar, row_indices, panels, current_row,
                          current_col == 0 );
     } );
 
