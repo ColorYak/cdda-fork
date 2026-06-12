@@ -63,6 +63,8 @@
 
 #include <cstdint>
 
+bool wide_pua_glyphs = false;
+
 struct interval {
     uint32_t first;
     uint32_t last;
@@ -159,6 +161,18 @@ int mk_wcwidth( uint32_t ucs )
     if( bisearch( ucs, combining,
                   sizeof( combining ) / sizeof( struct interval ) - 1 ) ) {
         return 0;
+    }
+
+    /* Treat the Private Use Area as wide when configured. PUA codepoints
+     * have no assigned width, and fonts like NerdFonts use them for
+     * double-width icons. Covers the BMP PUA (U+E000..U+F8FF) and the
+     * two supplementary PUA planes (SPUA-A U+F0000..U+FFFFD and SPUA-B
+     * U+100000..U+10FFFD). */
+    if( wide_pua_glyphs
+        && ( ( ucs >= 0xE000 && ucs <= 0xF8FF )
+             || ( ucs >= 0xF0000 && ucs <= 0xFFFFD )
+             || ( ucs >= 0x100000 && ucs <= 0x10FFFD ) ) ) {
+        return 2;
     }
 
     /* if we arrive here, ucs is not a combining or C0/C1 control character */
