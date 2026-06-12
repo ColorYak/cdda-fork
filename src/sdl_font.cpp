@@ -348,10 +348,21 @@ SDL_Texture_Ptr CachedTTFFont::create_glyph( const SDL_Renderer_Ptr &renderer,
 
 bool CachedTTFFont::isGlyphProvided( const std::string &ch ) const
 {
-    // Just return false if the glyph is not provided by the font
-    if( !TTF_GlyphIsProvided( font.get(), UTF8_getch( ch ) ) ) {
+    const uint32_t codepoint = UTF8_getch( ch );
+    // Fast path: ask the font directly. TTF_GlyphIsProvided takes a Uint16
+    // and silently truncates anything above the Basic Multilingual Plane,
+    // so use the 32-bit variant when available and otherwise skip the
+    // fast path for SMP codepoints (U+10000 and above) to avoid false negatives.
+#if SDL_TTF_VERSION_ATLEAST(2, 0, 18)
+    if( !TTF_GlyphIsProvided32( font.get(), codepoint ) ) {
         return false;
     }
+#else
+    if( codepoint <= 0xFFFF
+        && !TTF_GlyphIsProvided( font.get(), static_cast<Uint16>( codepoint ) ) ) {
+        return false;
+    }
+#endif
 
     // Test whether the glyph can actually be rendered
     constexpr SDL_Color white{255, 255, 255, 0};
