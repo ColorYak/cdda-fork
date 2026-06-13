@@ -1,5 +1,7 @@
 #include "gauntbar_ambient.h"
 
+// One-row ambient-conditions strip at the top of the GauntBar sidebar.
+
 #include <array>
 #include <map>
 #include <string>
@@ -24,6 +26,8 @@
 
 namespace
 {
+
+namespace D = gauntbar::draw;
 
 // === Light ===
 
@@ -55,10 +59,10 @@ lighting_glyph lighting_for_vision_mod( float vision_mod )
     return {NF_MD_LIGHTBULB_OUTLINE, c_light_blue};
 }
 
-gauntbar::draw::cell light_cell( const avatar &u )
+D::cell<1> light_cell( const avatar &u )
 {
     const lighting_glyph lg = lighting_for_vision_mod( u.fine_detail_vision_mod() );
-    return { lg.glyph, lg.color };
+    return D::cell{ D::segment{ lg.glyph, lg.color } };
 }
 
 // === Temperature ===
@@ -69,7 +73,7 @@ inline constexpr const char *NF_MD_TEMPERATURE_KELVIN = u8"\U000F0506";
 
 const flag_id json_flag_THERMOMETER( "THERMOMETER" );
 
-gauntbar::draw::cell temp_cell( const avatar &u, weather_manager &wx )
+D::cell<1> temp_cell( const avatar &u, weather_manager &wx )
 {
     const bool has_thermometer =
         u.cache_has_item_with( json_flag_THERMOMETER ) ||
@@ -96,7 +100,9 @@ gauntbar::draw::cell temp_cell( const avatar &u, weather_manager &wx )
         glyph = NF_MD_TEMPERATURE_FAHRENHEIT;
     }
 
-    return { string_format( "%.0f%s", value, glyph ), c_light_gray };
+    return D::cell{
+        D::segment{ string_format( "%.0f%s", value, glyph ), c_light_gray },
+    };
 }
 
 // === Weather ===
@@ -178,7 +184,7 @@ const std::map<std::string, weather_glyph> &weather_glyphs()
     return table;
 }
 
-gauntbar::draw::cell weather_cell( const avatar &u, const weather_manager &wx )
+D::cell<2> weather_cell( const avatar &u, const weather_manager &wx )
 {
     // No weather underground or indoors.
     if( u.posz() < 0 || g->is_sheltered( u.pos_bub() ) ) {
@@ -187,14 +193,18 @@ gauntbar::draw::cell weather_cell( const avatar &u, const weather_manager &wx )
     const std::string wid = wx.weather_id.str();
     const auto it = weather_glyphs().find( wid );
     if( it == weather_glyphs().end() ) {
-        return { wx.weather_id->name.translated(), c_light_gray };
+        return D::cell{
+            D::segment{},
+            D::segment{ wx.weather_id->name.translated(), c_light_gray },
+        };
     }
     const weather_glyph &wg = it->second;
-    return {
-        wg.show_name
-        ? string_format( "%s%s", wg.glyph, wx.weather_id->name.translated() )
-        : std::string( wg.glyph ),
-        wg.color,
+    return D::cell{
+        D::segment{ wg.glyph, wg.color },
+        D::segment{
+            wg.show_name ? wx.weather_id->name.translated() : std::string{},
+            c_light_gray,
+        },
     };
 }
 
@@ -312,7 +322,7 @@ nc_color wind_beaufort_color( int beaufort )
     return c_yellow;
 }
 
-gauntbar::draw::cell wind_cell( const avatar &u, const weather_manager &wx )
+D::cell<1> wind_cell( const avatar &u, const weather_manager &wx )
 {
     // No wind underground or indoors.
     if( u.posz() < 0 || g->is_sheltered( u.pos_bub() ) ) {
@@ -331,10 +341,12 @@ gauntbar::draw::cell wind_cell( const avatar &u, const weather_manager &wx )
     }
 
     const int beaufort = wind_beaufort_number( windpower );
-    return {
-        string_format( "%s%s", NF_WEATHER_WIND_BEAUFORT[beaufort],
-                       wind_direction_glyph( wx.winddirection ) ),
-        wind_beaufort_color( beaufort ),
+    return D::cell{
+        D::segment{
+            string_format( "%s%s", NF_WEATHER_WIND_BEAUFORT[beaufort],
+                           wind_direction_glyph( wx.winddirection ) ),
+            wind_beaufort_color( beaufort ),
+        },
     };
 }
 
