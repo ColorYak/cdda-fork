@@ -422,7 +422,7 @@ void color_manager::load_default()
     }
 }
 
-void init_colors()
+void init_default_color_pairs()
 {
     using namespace catacurses; // to get the base_color enumeration
     init_pair( 1, white,      black );
@@ -525,6 +525,11 @@ void init_colors()
     init_pair( 85, magenta,    dark_gray );
     init_pair( 86, yellow,     dark_gray );
     init_pair( 87, white,      dark_gray );
+}
+
+void init_colors()
+{
+    init_default_color_pairs();
 
     all_colors.load_default();
     all_colors.load_custom( {} );

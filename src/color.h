@@ -339,6 +339,11 @@ class cata_path;
 class JsonArray;
 class JsonOut;
 
+// Populate the default `base_color` pairs in `colorpairs[]`. Split out
+// of `init_colors()` for callers that want the pair table without the
+// JSON loader and translation layer `init_colors()` also wires up.
+void init_default_color_pairs();
+
 void init_colors();
 
 // Index for highlight cache
