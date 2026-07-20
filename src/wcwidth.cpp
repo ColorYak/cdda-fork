@@ -170,6 +170,7 @@ int mk_wcwidth( uint32_t ucs )
         // NOLINTNEXTLINE(modernize-avoid-c-arrays)
         static constexpr struct interval nf_wide[] = {
             { 0xE000,  0xE00A  },  // Pomicons
+            { 0xE0C0,  0xE0D1  },  // Powerline Extra (subset, 2 gaps)
             { 0xE200,  0xE2A9  },  // Font Awesome Extension
             { 0xE300,  0xE3FF  },  // Weather Icons
             { 0xE5FA,  0xE6FF  },  // Seti-UI + Custom
