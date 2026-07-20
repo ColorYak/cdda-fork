@@ -2896,6 +2896,18 @@
   },
   {
     "type": "keybinding",
+    "name": "Zoom in (fine)",
+    "id": "zoom_in_fine",
+    "bindings": [ { "input_method": "mouse", "key": "SCROLL_UP" } ]
+  },
+  {
+    "type": "keybinding",
+    "name": "Zoom out (fine)",
+    "id": "zoom_out_fine",
+    "bindings": [ { "input_method": "mouse", "key": "SCROLL_DOWN" } ]
+  },
+  {
+    "type": "keybinding",
     "name": "Toggle debug mode",
     "category": "DEFAULTMODE",
     "id": "debug_mode"

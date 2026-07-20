@@ -759,9 +759,11 @@ class game
         void zoom_out_overmap();
         void zoom_in();
         void zoom_out();
+        void zoom_in_fine();
+        void zoom_out_fine();
         void reset_zoom();
-        void set_zoom( int level );
-        int get_zoom() const;
+        void set_zoom( double level );
+        double get_zoom() const;
         int get_moves_since_last_save() const;
         int get_user_action_counter() const;
 
@@ -1256,8 +1258,9 @@ class game
         // Times the user has input an action
         int user_action_counter = 0; // NOLINT(cata-serialize)
 
-        /** How far the tileset should be zoomed out, 16 is default. 32 is zoomed in by x2, 8 is zoomed out by x0.5 */
-        int tileset_zoom = 0; // NOLINT(cata-serialize)
+        /** How far the tileset should be zoomed out, 16 is default. 32 is zoomed in by x2, 8 is zoomed out by x0.5.
+         *  May hold fractional values. */
+        double tileset_zoom = 0; // NOLINT(cata-serialize)
         int overmap_tileset_zoom = DEFAULT_TILESET_ZOOM; // NOLINT(cata-serialize)
 
         /** Seed for all the random numbers that should have consistent randomness (weather). */

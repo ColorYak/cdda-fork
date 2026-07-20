@@ -310,10 +310,14 @@ enum action_id : int {
     ACTION_DISPLAY_SCENT_TYPE,
     /** Toggle debug mode */
     ACTION_TOGGLE_DEBUG_MODE,
-    /** Zoom view in */
-    ACTION_ZOOM_OUT,
     /** Zoom view out */
+    ACTION_ZOOM_OUT,
+    /** Zoom view in */
     ACTION_ZOOM_IN,
+    /** Zoom view in by a small step */
+    ACTION_ZOOM_IN_FINE,
+    /** Zoom view out by a small step */
+    ACTION_ZOOM_OUT_FINE,
     /** Open the action menu */
     ACTION_ACTIONMENU,
     /** Open the item uses menu */

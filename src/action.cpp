@@ -349,6 +349,10 @@ std::string action_ident( action_id act )
             return "zoom_out";
         case ACTION_ZOOM_IN:
             return "zoom_in";
+        case ACTION_ZOOM_OUT_FINE:
+            return "zoom_out_fine";
+        case ACTION_ZOOM_IN_FINE:
+            return "zoom_in_fine";
         case ACTION_TOGGLE_FULLSCREEN:
             return "toggle_fullscreen";
         case ACTION_TOGGLE_PIXEL_MINIMAP:
@@ -461,6 +465,8 @@ bool can_action_change_worldstate( const action_id act )
         case ACTION_DISPLAY_TRANSPARENCY:
         case ACTION_ZOOM_OUT:
         case ACTION_ZOOM_IN:
+        case ACTION_ZOOM_OUT_FINE:
+        case ACTION_ZOOM_IN_FINE:
         case ACTION_TOGGLE_PIXEL_MINIMAP:
         case ACTION_TOGGLE_PANEL_ADM:
         case ACTION_PANEL_MGMT:
@@ -995,6 +1001,8 @@ action_id handle_action_menu( map &here )
             if( use_tiles ) {
                 REGISTER_ACTION( ACTION_ZOOM_OUT );
                 REGISTER_ACTION( ACTION_ZOOM_IN );
+                REGISTER_ACTION( ACTION_ZOOM_OUT_FINE );
+                REGISTER_ACTION( ACTION_ZOOM_IN_FINE );
             }
 #endif
         }

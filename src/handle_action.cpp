@@ -3071,6 +3071,16 @@ bool game::do_regular_action( action_id &act, avatar &player_character,
             mark_main_ui_adaptor_resize();
             break;
 
+        case ACTION_ZOOM_IN_FINE:
+            zoom_in_fine();
+            mark_main_ui_adaptor_resize();
+            break;
+
+        case ACTION_ZOOM_OUT_FINE:
+            zoom_out_fine();
+            mark_main_ui_adaptor_resize();
+            break;
+
         case ACTION_ITEMACTION:
             item_action_menu();
             break;

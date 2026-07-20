@@ -2835,6 +2835,12 @@ target_handler::trajectory target_ui::run()
         } else if( action == "zoom_out" ) {
             g->zoom_out();
             g->mark_main_ui_adaptor_resize();
+        } else if( action == "zoom_in_fine" ) {
+            g->zoom_in_fine();
+            g->mark_main_ui_adaptor_resize();
+        } else if( action == "zoom_out_fine" ) {
+            g->zoom_out_fine();
+            g->mark_main_ui_adaptor_resize();
         } else if( action == "QUIT" ) {
             loop_exit_code = ExitCode::Abort;
             break;
@@ -2994,6 +3000,8 @@ void target_ui::init_window_and_input()
     ctxt.register_action( "MOUSE_MOVE" );
     ctxt.register_action( "zoom_out" );
     ctxt.register_action( "zoom_in" );
+    ctxt.register_action( "zoom_out_fine" );
+    ctxt.register_action( "zoom_in_fine" );
     ctxt.register_action( "TOGGLE_MOVE_CURSOR_VIEW" );
     if( fov_3d_z_range > 0 ) {
         ctxt.register_action( "LEVEL_UP" );

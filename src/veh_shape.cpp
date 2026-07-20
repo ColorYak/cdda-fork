@@ -233,6 +233,10 @@ bool veh_shape::handle_cursor_movement( const std::string &action )
         g->zoom_in();
     } else if( action == "zoom_out" ) {
         g->zoom_out();
+    } else if( action == "zoom_in_fine" ) {
+        g->zoom_in_fine();
+    } else if( action == "zoom_out_fine" ) {
+        g->zoom_out_fine();
     } else if( action == "SELECT" ) {
         const std::optional<tripoint_bub_ms> mouse_pos = ctxt.get_coordinates( g->w_terrain );
         if( !mouse_pos ) {
@@ -267,4 +271,6 @@ void veh_shape::init_input()
     ctxt.register_action( "REMOVE" );
     ctxt.register_action( "zoom_out" );
     ctxt.register_action( "zoom_in" );
+    ctxt.register_action( "zoom_out_fine" );
+    ctxt.register_action( "zoom_in_fine" );
 }
