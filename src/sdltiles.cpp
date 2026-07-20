@@ -4118,16 +4118,24 @@ void rescale_tileset( int size )
 static window_dimensions get_window_dimensions( const catacurses::window &win,
         const point &pos, const point &size )
 {
+    // A null `win` means "an imaginary normal window" (see the (pos, size)
+    // overload). `window::operator==` compares the underlying pointer, so a
+    // null `win` would spuriously compare equal to `g->w_terrain` /
+    // `g->w_overmap` whenever those are themselves null (e.g. while a
+    // full-screen menu lays out before the terrain window exists), sending the
+    // imaginary window down the terrain/overmap special cases and collapsing
+    // its size to zero. Guard every special case with `win &&` so a null
+    // window always takes the standard-font path.
     window_dimensions dim;
-    if( use_tiles && g && win == g->w_terrain ) {
+    if( win && use_tiles && g && win == g->w_terrain ) {
         // tiles might have different dimensions than standard font
         dim.scaled_font_size.x = tilecontext->get_tile_width();
         dim.scaled_font_size.y = tilecontext->get_tile_height();
-    } else if( map_font && g && win == g->w_terrain ) {
+    } else if( win && map_font && g && win == g->w_terrain ) {
         // map font (if any) might differ from standard font
         dim.scaled_font_size.x = map_font->width;
         dim.scaled_font_size.y = map_font->height;
-    } else if( overmap_font && g && win == g->w_overmap ) {
+    } else if( win && overmap_font && g && win == g->w_overmap ) {
         if( use_tiles && use_tiles_overmap ) {
             // tiles might have different dimensions than standard font
             dim.scaled_font_size.x = overmap_tilecontext->get_tile_width();
@@ -4158,11 +4166,11 @@ static window_dimensions get_window_dimensions( const catacurses::window &win,
     dim.window_pos_pixel = point( dim.window_pos_cell.x * fontwidth,
                                   dim.window_pos_cell.y * fontheight );
     // But the size of the window might not be.
-    if( use_tiles && g && win == g->w_terrain ) {
+    if( win && use_tiles && g && win == g->w_terrain ) {
         // The terrain GUI has special size during rendering.
         dim.window_size_pixel.x = TERRAIN_WINDOW_TERM_WIDTH * fontwidth;
         dim.window_size_pixel.y = TERRAIN_WINDOW_TERM_HEIGHT * fontheight;
-    } else if( use_tiles && use_tiles_overmap && g && win == g->w_overmap ) {
+    } else if( win && use_tiles && use_tiles_overmap && g && win == g->w_overmap ) {
         // The overmap GUI has special size during rendering.
         dim.window_size_pixel.x = OVERMAP_WINDOW_TERM_WIDTH * fontwidth;
         dim.window_size_pixel.y = OVERMAP_WINDOW_TERM_HEIGHT * fontheight;
