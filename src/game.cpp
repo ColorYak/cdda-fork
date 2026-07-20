@@ -108,6 +108,7 @@
 #include "game_ui.h"
 #include "gamemode.h"
 #include "gates.h"
+#include "gaunthud.h"
 #include "get_version.h"
 #include "harvest.h"
 #include "iexamine.h"
@@ -4202,6 +4203,13 @@ void game::draw_panels( bool force_draw )
     const int current_turn = to_turns<int>( calendar::turn - calendar::turn_zero );
     const bool draw_this_turn = current_turn > previous_turn || force_draw;
     panel_manager &mgr = panel_manager::get_manager();
+    // GauntHUD owns its own placement; the column loop below assumes
+    // sidebar geometry that doesn't apply to corner-anchored readouts.
+    if( mgr.get_current_layout_id() == gaunthud::layout_id ) {
+        gaunthud::paint_hud( u );
+        previous_turn = current_turn;
+        return;
+    }
     int y = 0;
     const bool sidebar_right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
     int spacer = get_option<bool>( "SIDEBAR_SPACERS" ) ? 1 : 0;
