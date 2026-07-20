@@ -36,6 +36,12 @@ bool has_undisplayed_messages();
 void display_messages();
 void display_messages( const catacurses::window &ipk_target, int left, int top, int right,
                        int bottom );
+struct messages_extent {
+    int width = 0;
+    int height = 0;
+};
+// Bounding box `display_messages` would paint into a region of these bounds.
+messages_extent measure_messages_extent( int max_width, int max_height );
 void serialize( JsonOut &json );
 void deserialize( const JsonObject &json );
 

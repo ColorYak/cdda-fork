@@ -1001,6 +1001,35 @@ void Messages::display_messages( const catacurses::window &ipk_target, const int
     player_messages.curmes = calendar::turn;
 }
 
+Messages::messages_extent Messages::measure_messages_extent( const int max_width,
+        const int max_height )
+{
+    int widest = 0;
+    int lines_used = 0;
+    for( int i = size() - 1; i >= 0 && lines_used < max_height; --i ) {
+        const game_message &m = player_messages.messages[i];
+        if( message_exceeds_ttl( m ) ) {
+            break;
+        }
+        // `display_messages` only honours the cooldown hide in its bottom-up
+        // branch; the top-down branch shows cooldown-hidden messages.
+        if( !log_from_top && m.is_in_cooldown() ) {
+            continue;
+        }
+        const std::string text = m.get_with_count();
+        const int w = utf8_width( text, /*ignore_tags=*/true );
+        if( w <= max_width ) {
+            widest = std::max( widest, w );
+            ++lines_used;
+        } else {
+            // Wraps. Width is pinned to the cap; fold to count rows.
+            widest = max_width;
+            lines_used += static_cast<int>( foldstring( text, max_width ).size() );
+        }
+    }
+    return { widest, std::min( lines_used, max_height ) };
+}
+
 void add_msg( std::string msg )
 {
     Messages::add_msg( std::move( msg ) );
