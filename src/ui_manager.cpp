@@ -394,6 +394,14 @@ void ui_adaptor::redraw_invalidated( )
         auto first_enabled = first == ui_stack.rend() ? ui_stack.begin() : std::prev( first.base() );
         ui_stack_t *ui_stack_orig = &ui_stack;
 
+#if defined( TILES )
+        if( translucent_overlays ) {
+            const SDL_Renderer_Ptr &renderer = get_sdl_renderer();
+            SDL_SetRenderDrawColor( renderer.get(), 0, 0, 0, 255 );
+            SDL_RenderClear( renderer.get() );
+        }
+#endif
+
         // Apply deferred resizing.
         bool needs_resize = false;
         for( auto it = first_enabled; !needs_resize && it != ui_stack_orig->end(); ++it ) {
@@ -418,6 +426,24 @@ void ui_adaptor::redraw_invalidated( )
                     if( !restart_redrawing ) {
                         ui.deferred_resize = false;
                     }
+                }
+            }
+        }
+
+        // When translucent overlays are active, windows blend over whatever is
+        // already in display_buffer, so the full stack must repaint from a clean
+        // base.
+        if( !restart_redrawing && translucent_overlays ) {
+            bool any_invalidated = false;
+            for( auto it = first_enabled; it != ui_stack_orig->end(); ++it ) {
+                if( it->get().invalidated ) {
+                    any_invalidated = true;
+                    break;
+                }
+            }
+            if( any_invalidated ) {
+                for( auto it = first_enabled; it != ui_stack_orig->end(); ++it ) {
+                    it->get().invalidated = true;
                 }
             }
         }
