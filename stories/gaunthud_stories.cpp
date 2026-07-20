@@ -9,6 +9,7 @@
 
 #include "cursesdef.h"
 #include "gaunthud_world_render.h"
+#include "gaunthud_safemode_render.h"
 #include "gaunthud_cells.h"
 #include "move_mode.h"
 #include "point.h"
@@ -18,6 +19,7 @@ namespace
 {
 
 namespace W = gaunthud::world;
+namespace SM = gaunthud::safemode;
 namespace fs = std::filesystem;
 
 struct world_story {
@@ -139,6 +141,28 @@ std::vector<world_story> world_stories()
     };
 }
 
+struct safemode_story {
+    std::string slug;
+    std::string label;
+    SM::safemode_data data;
+};
+
+std::vector<safemode_story> safemode_stories()
+{
+    return {
+        { "on",             "Safe mode ON (invisible)",     { SM::mode::on, false, 0, 0 } },
+        { "off-no-auto",    "OFF, no auto-reactivation",    { SM::mode::off, false, 0, 0 } },
+        { "off-auto-full",  "OFF, auto remaining 50/50",    { SM::mode::off, true, 0, 50 } },
+        { "off-auto-3q",    "OFF, auto remaining 38/50",    { SM::mode::off, true, 12, 50 } },
+        { "off-auto-half",  "OFF, auto remaining 25/50",    { SM::mode::off, true, 25, 50 } },
+        { "off-auto-quarter", "OFF, auto remaining 12/50",  { SM::mode::off, true, 38, 50 } },
+        { "off-auto-none",  "OFF, auto remaining 0/50",     { SM::mode::off, true, 50, 50 } },
+        { "stop-single",    "STOP, single monster",         { SM::mode::stop, false, 0, 0, "Zombie spotted" } },
+        { "stop-npc",       "STOP, hostile NPC",             { SM::mode::stop, false, 0, 0, "Hostile survivor spotted" } },
+        { "stop-multiple",  "STOP, multiple enemies",        { SM::mode::stop, false, 0, 0, "Monsters spotted" } },
+    };
+}
+
 } // namespace
 
 namespace gaunthud_story
@@ -165,6 +189,28 @@ void run( const storybook::config &cfg )
         std::printf( "  %s\n", png.string().c_str() );
 
         world_section.entries.push_back( { s.slug, s.label, png_name } );
+    }
+
+    storybook::section safemode_section{ "Safe mode variants", {} };
+    for( const safemode_story &s : safemode_stories() ) {
+        const gaunthud::cells::render_result r = SM::render( s.data );
+        if( r.size.width <= 0 || r.size.height <= 0 ) {
+            // State produces no output (e.g. ON) — note it but skip PNG.
+            safemode_section.entries.push_back( { s.slug, s.label, "" } );
+            continue;
+        }
+        catacurses::window w = catacurses::newwin(
+                                   r.size.height, r.size.width, point::zero );
+        gaunthud::cells::paint( w, r.buffer );
+
+        const std::string png_name = "safemode-" + s.slug + ".png";
+        const fs::path png = cfg.out_dir / png_name;
+        if( !storybook::paint_window_to_png( w, png ) ) {
+            std::exit( 1 );
+        }
+        std::printf( "  %s\n", png.string().c_str() );
+
+        safemode_section.entries.push_back( { s.slug, s.label, png_name } );
     }
 
     // Placeholder section for full-sidebar stories — currently no
