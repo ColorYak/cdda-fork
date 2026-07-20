@@ -631,19 +631,19 @@ void tileset_cache::loader::load_tileset( const cata_path &img_path, const bool 
     size = expected_tilecount;
 }
 
-void cata_tiles::set_draw_scale( int scale )
+void cata_tiles::set_draw_scale( double scale )
 {
     cata_assert( tileset_ptr );
-    const int mult = tileset_ptr->get_tile_pixelscale() * scale;
-    const int div = 16;
-    tile_width = tileset_ptr->get_tile_width() * mult / div;
-    tile_height = tileset_ptr->get_tile_height() * mult / div;
+    const double mult = tileset_ptr->get_tile_pixelscale() * scale;
+    const double div = 16;
+    tile_width = std::lround( tileset_ptr->get_tile_width() * mult / div );
+    tile_height = std::lround( tileset_ptr->get_tile_height() * mult / div );
     max_tile_extent = tileset_ptr->get_max_tile_extent();
     // Rounding down because the extent may be negative
-    max_tile_extent.p_min.x = divide_round_down( max_tile_extent.p_min.x * mult, div );
-    max_tile_extent.p_min.y = divide_round_down( max_tile_extent.p_min.y * mult, div );
-    max_tile_extent.p_max.x = divide_round_down( max_tile_extent.p_max.x * mult, div );
-    max_tile_extent.p_max.y = divide_round_down( max_tile_extent.p_max.y * mult, div );
+    max_tile_extent.p_min.x = static_cast<int>( std::floor( max_tile_extent.p_min.x * mult / div ) );
+    max_tile_extent.p_min.y = static_cast<int>( std::floor( max_tile_extent.p_min.y * mult / div ) );
+    max_tile_extent.p_max.x = static_cast<int>( std::floor( max_tile_extent.p_max.x * mult / div ) );
+    max_tile_extent.p_max.y = static_cast<int>( std::floor( max_tile_extent.p_max.y * mult / div ) );
     zlevel_height = tileset_ptr->get_zlevel_height();
 }
 
@@ -1364,6 +1364,23 @@ void cata_tiles::draw( const point &dest, const tripoint_bub_ms &center, int wid
     op = dest;
     screentile_width = s.x;
     screentile_height = s.y;
+
+    // Pin the focused tile's center to the window center. The view origin is
+    // quantized to whole tiles (POSX/POSY, or the iso screentile counts), so
+    // without this the focused tile jumps by up to half a tile as the fractional
+    // tile size changes during fine zoom.
+    {
+        // Center of the basic tile within its sprite box. For iso the basic
+        // diamond is tile_width/2 tall and anchored to the box bottom (the
+        // -tile_height shift in player_to_screen), so its center is tile_width/4
+        // above the bottom rather than at tile_height/2.
+        const point tile_center_in_bbox = is_isometric()
+                                          ? point( tile_width / 2, tile_height - tile_width / 4 )
+                                          : point( tile_width / 2, tile_height / 2 );
+        const point center_tile_center = player_to_screen( center.xy() ) + tile_center_in_bbox;
+        const point window_center = dest + point( width / 2, height / 2 );
+        op += window_center - center_tile_center;
+    }
 
     const int num_ranges = is_isometric() ? 1 + fov_3d_z_range : 1;
     std::vector<half_open_rectangle<point>> z_any_tile_range( num_ranges );

@@ -438,9 +438,9 @@ class cata_tiles
                     tileset_cache &cache );
         ~cata_tiles();
 
-        /** Reload tileset, with the given scale. Scale is divided by 16 to allow for scales < 1 without risking
-         *  float inaccuracies. */
-        void set_draw_scale( int scale );
+        /** Reload tileset, with the given scale. Scale is divided by 16.
+         ** Fractional values are supported. Tile sizes are rounded to whole pixels. */
+        void set_draw_scale( double scale );
 
         void on_options_changed();
 
