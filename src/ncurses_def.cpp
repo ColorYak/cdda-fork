@@ -73,6 +73,10 @@ catacurses::window catacurses::newwin( const int nlines, const int ncols, const 
     } ) );
 }
 
+void catacurses::set_window_bg_alpha( const window &/*win*/, window_backdrop /*backdrop*/ )
+{
+}
+
 void catacurses::wnoutrefresh( const window &win )
 {
     if( !win ) {

@@ -8,10 +8,12 @@
 
 #ifndef TUI
 #include <array>
+#include <optional>
 #include <string>
 #include <vector>
 #include <utility>
 
+#include "cursesdef.h"
 #include "point.h"
 
 namespace catacurses
@@ -65,12 +67,17 @@ struct WINDOW {
     base_color FG;
     // Current background color from attron
     base_color BG;
+    // Background-clear behaviour override, honoured only while
+    // TRANSLUCENT_OVERLAYS is on (see effective_backdrop).
+    std::optional<catacurses::window_backdrop> backdrop_override;
     // Does this window actually exist?
     bool inuse;
     // Tracks if the window text has been changed
     bool draw;
     point cursor;
     std::vector<curseline> line;
+
+    catacurses::window_backdrop effective_backdrop() const;
 };
 
 extern std::array<pairs, 100> colorpairs;

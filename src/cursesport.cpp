@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "catacharset.h"
+#include "cached_options.h"
 #include "color.h"
 #include "cursesdef.h"
 #include "game_ui.h"
@@ -61,6 +62,21 @@ static bool wmove_internal( const catacurses::window &win_, const point &p )
 //***********************************
 //Pseudo-Curses Functions           *
 //***********************************
+
+catacurses::window_backdrop cata_cursesport::WINDOW::effective_backdrop() const
+{
+    if( !translucent_overlays ) {
+        return catacurses::window_backdrop::opaque;
+    }
+    return backdrop_override.value_or( catacurses::window_backdrop::translucent );
+}
+
+void catacurses::set_window_bg_alpha( const window &win, const window_backdrop backdrop )
+{
+    if( cata_cursesport::WINDOW *const w = win.get<cata_cursesport::WINDOW>() ) {
+        w->backdrop_override = backdrop;
+    }
+}
 
 catacurses::window catacurses::newwin( int nlines, int ncols, const point &begin )
 {

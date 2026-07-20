@@ -108,6 +108,13 @@ enum base_color : short {
 using chtype = int;
 using attr_t = unsigned short;
 
+// With TRANSLUCENT_OVERLAYS off, every window is `opaque`.
+enum class window_backdrop {
+    opaque,
+    translucent,
+    none,
+};
+
 extern window stdscr;
 #if defined(USE_PDCURSES)
 inline constexpr window &newscr = stdscr;
@@ -116,6 +123,7 @@ extern window newscr;
 #endif
 
 window newwin( int nlines, int ncols, const point &begin );
+void set_window_bg_alpha( const window &win, window_backdrop backdrop );
 void wborder( const window &win, chtype ls, chtype rs, chtype ts, chtype bs, chtype tl, chtype tr,
               chtype bl, chtype br );
 void mvwhline( const window &win, const point &p, chtype ch, int n );
