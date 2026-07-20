@@ -468,6 +468,23 @@ int panel_manager::get_width_left() const
     return width_left;
 }
 
+bool panel_manager::has_sidebar() const
+{
+    const bool sidebar_right = get_option<std::string>( "SIDEBAR_POSITION" ) != "left";
+    return ( sidebar_right ? get_width_right() : get_width_left() ) > 0;
+}
+
+panel_manager::anchored_overlay panel_manager::sidebar_anchored_overlay(
+    int min_width, int max_width ) const
+{
+    const bool sidebar_right = get_option<std::string>( "SIDEBAR_POSITION" ) != "left";
+    const int sidebar_width = sidebar_right ? get_width_right() : get_width_left();
+    const int target = sidebar_width > 0 ? sidebar_width : TERMX / 4;
+    int width = std::clamp( target, min_width, max_width );
+    width = std::min( width, TERMX );
+    return { width, sidebar_right ? TERMX - width : 0 };
+}
+
 void panel_manager::init()
 {
     layouts = initialize_default_panel_layouts();

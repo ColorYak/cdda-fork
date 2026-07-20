@@ -136,6 +136,23 @@ class panel_manager
         std::string get_current_layout_id() const;
         int get_width_right() const;
         int get_width_left() const;
+        // True when the current layout reserves a non-zero sidebar column on
+        // whichever side SIDEBAR_POSITION selects.
+        bool has_sidebar() const;
+
+        // Width and x-origin for an overlay that wants to anchor to the side
+        // where the sidebar would normally sit (per SIDEBAR_POSITION).
+        // - If the layout reserves a sidebar column there, its width is used,
+        //   clamped to [min_width, max_width].
+        // - If not (e.g. layouts that overlay the whole terrain), the width
+        //   scales from TERMX and is clamped to the same range, so the
+        //   overlay stays usable without sprawling on wide screens.
+        // Both fields are guaranteed to fit on screen.
+        struct anchored_overlay {
+            int width;
+            int origin_x;
+        };
+        anchored_overlay sidebar_anchored_overlay( int min_width, int max_width ) const;
 
         void show_adm();
 
