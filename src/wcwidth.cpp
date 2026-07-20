@@ -63,6 +63,8 @@
 
 #include <cstdint>
 
+pua_width_mode pua_widths = pua_width_mode::standard;
+
 struct interval {
     uint32_t first;
     uint32_t last;
@@ -159,6 +161,31 @@ int mk_wcwidth( uint32_t ucs )
     if( bisearch( ucs, combining,
                   sizeof( combining ) / sizeof( struct interval ) - 1 ) ) {
         return 0;
+    }
+
+    /* NerdFonts double-width icon ranges.  Most Powerline separators
+     * (E0A0-E0BF) and progress bars (EE00-EE0B) are single-width
+     * and intentionally excluded. */
+    if( pua_widths == pua_width_mode::nerdfonts ) {
+        // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+        static constexpr struct interval nf_wide[] = {
+            { 0xE000,  0xE00A  },  // Pomicons
+            { 0xE200,  0xE2A9  },  // Font Awesome Extension
+            { 0xE300,  0xE3FF  },  // Weather Icons
+            { 0xE5FA,  0xE6FF  },  // Seti-UI + Custom
+            { 0xE700,  0xE8FF  },  // Devicons
+            { 0xEA60,  0xECFF  },  // Codicons
+            { 0xED00,  0xEDFF  },  // Font Awesome (below progress)
+            { 0xEE0C,  0xEFFF  },  // Font Awesome (above progress)
+            { 0xF000,  0xF3FF  },  // Font Awesome + Font Logos
+            { 0xF400,  0xF8FF  },  // Octicons + legacy MDI
+            { 0xF0001, 0xF1AFF },  // Material Design Icons
+        };
+        for( const auto &r : nf_wide ) {
+            if( ucs >= r.first && ucs <= r.last ) {
+                return 2;
+            }
+        }
     }
 
     /* if we arrive here, ucs is not a combining or C0/C1 control character */

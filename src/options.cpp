@@ -38,6 +38,7 @@
 #include "translations.h"
 #include "try_parse_integer.h"
 #include "ui_manager.h"
+#include "wcwidth.h"
 #include "worldfactory.h"
 
 #if defined(TILES)
@@ -2370,6 +2371,13 @@ void options_manager::add_options_graphics()
              false, COPT_CURSES_HIDE
            );
 
+        add( "FONT_PUA_WIDTHS", page_id, to_translation( "PUA glyph widths" ),
+             to_translation( "Column widths for Private Use Area codepoints.  'nerdfonts' uses the NerdFonts double-width icon layout.  Requires restart." ), {
+                 { "standard", to_translation( "Standard" ) },
+                 { "nerdfonts", to_translation( "NerdFonts" ) },
+             }, "standard", COPT_CURSES_HIDE
+           );
+
         add( "FONT_WIDTH", page_id, to_translation( "Font width" ),
              to_translation( "Set the font width.  Requires restart." ),
              6, 100, 8, COPT_CURSES_HIDE
@@ -4030,6 +4038,9 @@ void options_manager::update_options_cache()
     // cache to global due to heavy usage.
     trigdist = ::get_option<bool>( "CIRCLEDIST" );
     use_tiles = ::get_option<bool>( "USE_TILES" );
+    pua_widths = ::get_option<std::string>( "FONT_PUA_WIDTHS" ) == "nerdfonts"
+                 ? pua_width_mode::nerdfonts
+                 : pua_width_mode::standard;
 
     prevent_occlusion = ::get_option<int>( "PREVENT_OCCLUSION" );
     prevent_occlusion_retract = ::get_option<bool>( "PREVENT_OCCLUSION_RETRACT" );
