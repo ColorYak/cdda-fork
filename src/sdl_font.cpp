@@ -320,18 +320,26 @@ SDL_Texture_Ptr CachedTTFFont::create_glyph( const SDL_Renderer_Ptr &renderer,
     SDL_Surface_Ptr surface = create_surface_32( ch_width, height );
     SDL_Rect src_rect = { 0, 0, sglyph->w, sglyph->h };
     SDL_Rect dst_rect = { 0, 0, ch_width, height };
+    // When the rendered glyph is wider/taller than the cell we centre-crop
+    // by an even amount on each side. For an odd-pixel overflow the
+    // `(overflow + 1) / 2` rounds toward dropping the leading edge instead
+    // of the trailing one. Fonts that bleed past the advance for
+    // block/box-drawing glyphs typically place the anti-aliased fringe on
+    // the leading edge and the solid edge opposite, so leading-side
+    // cropping keeps cells visually flush instead of leaving a fuzzy
+    // sliver that reads as a seam against adjacent cells.
     if( src_rect.w < dst_rect.w ) {
         dst_rect.x = ( dst_rect.w - src_rect.w ) / 2;
         dst_rect.w = src_rect.w;
     } else if( src_rect.w > dst_rect.w ) {
-        src_rect.x = ( src_rect.w - dst_rect.w ) / 2;
+        src_rect.x = ( src_rect.w - dst_rect.w + 1 ) / 2;
         src_rect.w = dst_rect.w;
     }
     if( src_rect.h < dst_rect.h ) {
         dst_rect.y = ( dst_rect.h - src_rect.h ) / 2;
         dst_rect.h = src_rect.h;
     } else if( src_rect.h > dst_rect.h ) {
-        src_rect.y = ( src_rect.h - dst_rect.h ) / 2;
+        src_rect.y = ( src_rect.h - dst_rect.h + 1 ) / 2;
         src_rect.h = dst_rect.h;
     }
 
