@@ -25,6 +25,7 @@
 #include "game.h"
 #include "game_constants.h"
 #include "game_ui.h"
+#include "gaunthud.h"
 #include "imgui/imgui.h"
 #include "input_context.h"
 #include "json.h"
@@ -406,6 +407,9 @@ static std::map<std::string, panel_layout> initialize_default_panel_layouts()
                          panel_layout( wgt._label, initialize_default_custom_panels( wgt ) ) );
         }
     }
+
+    // Hardcoded layouts that aren't backed by a JSON sidebar widget.
+    gaunthud::register_layout( ret );
 
     return ret;
 }
