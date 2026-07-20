@@ -6837,6 +6837,11 @@ void Character::set_stamina( int new_stamina )
     stamina = new_stamina;
 }
 
+int Character::last_move_stamina_burn() const
+{
+    return last_move_stamina_burn_;
+}
+
 int Character::get_arms_power_use() const
 {
     // millijoules
@@ -7003,9 +7008,11 @@ void Character::burn_move_stamina( int moves )
     }
 
     burn_ratio *= move_mode->stamina_mult();
+    const int before = get_stamina();
     burn_energy_legs( -( ( moves * burn_ratio ) / 100.0 ) * get_modifier(
                           character_modifier_stamina_move_cost_mod ) * get_modifier(
                           character_modifier_move_mode_move_cost_mod ) );
+    last_move_stamina_burn_ = before - get_stamina();
     add_msg_debug( debugmode::DF_CHARACTER, "Stamina burn: %d", -( ( moves * burn_ratio ) / 100 ) );
     // Chance to suffer pain if overburden and stamina runs out or has trait BADBACK
     // Starts at 1 in 25, goes down by 5 for every 50% more carried

@@ -3166,6 +3166,7 @@ class Character : public Creature, public visitable
         float get_bionic_limb_percentage() const;
         void mod_stamina( int mod );
         void burn_move_stamina( int moves );
+        int last_move_stamina_burn() const;
         /** Regenerates stamina */
         void update_stamina( int turns );
 
@@ -4138,6 +4139,7 @@ class Character : public Creature, public visitable
         int hunger;
         int thirst;
         int stamina;
+        int last_move_stamina_burn_ = 0;
 
         int cardio_acc;
         int base_cardio_acc;
