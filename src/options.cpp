@@ -2445,6 +2445,14 @@ void options_manager::add_options_graphics()
 
     add_empty_line();
 
+    add( "TRANSLUCENT_OVERLAYS", "graphics",
+         to_translation( "Translucent overlays" ),
+         to_translation( "Enable semi-transparent backgrounds for floating overlays. Tiles only." ),
+         false, COPT_CURSES_HIDE
+       );
+
+    add_empty_line();
+
     add_option_group( "graphics", Group( "tileset_opts", to_translation( "Tileset options" ),
                                          to_translation( "Options regarding tileset." ) ),
     [&]( const std::string & page_id ) {
@@ -4053,6 +4061,7 @@ void options_manager::update_options_cache()
     use_far_tiles = ::get_option<bool>( "USE_DISTANT_TILES" ) ||
                     ::get_option<std::string>( "TILES" ) == ::get_option<std::string>( "DISTANT_TILES" );
     use_tiles_overmap = ::get_option<bool>( "USE_OVERMAP_TILES" );
+    translucent_overlays = ::get_option<bool>( "TRANSLUCENT_OVERLAYS" );
     log_from_top = ::get_option<std::string>( "LOG_FLOW" ) == "new_top";
     message_ttl = ::get_option<int>( "MESSAGE_TTL" );
     message_cooldown = ::get_option<int>( "MESSAGE_COOLDOWN" );

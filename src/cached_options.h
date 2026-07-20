@@ -24,6 +24,7 @@ extern bool use_tiles;
 extern bool use_far_tiles;
 extern bool use_pinyin_search;
 extern bool use_tiles_overmap;
+extern bool translucent_overlays;
 extern bool pixel_minimap_option;
 extern int pixel_minimap_r;
 extern int pixel_minimap_g;
