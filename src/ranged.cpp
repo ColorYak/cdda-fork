@@ -2005,7 +2005,7 @@ static int print_ranged_chance( const catacurses::window &w, int line_number,
     int width = getmaxx( w ) - 2; // window width minus borders
     const int bars_pad = 3;
     bool display_numbers = get_option<std::string>( "ACCURACY_DISPLAY" ) == "numbers";
-    bool narrow = panel_manager::get_manager().get_current_layout().panels().begin()->get_width() <= 42;
+    bool narrow = width <= 42;
     nc_color col = c_light_gray;
 
 
@@ -2950,17 +2950,15 @@ target_handler::trajectory target_ui::run()
 void target_ui::init_window_and_input()
 {
     int top = 0;
-    int width = panel_manager::get_manager().get_current_layout().panels().begin()->get_width();
+    const auto [overlay_width, origin_x] =
+        panel_manager::get_manager().sidebar_anchored_overlay( 34, 55 );
+    int width = overlay_width;
     int height;
     narrow = width <= 42;
     if( narrow ) {
-        if( width < 34 ) {
-            width = 34;
-        }
         height = 24;
         compact = true;
     } else {
-        width = 55;
         compact = TERMY < 41;
         tiny = TERMY < 28;
         bool use_whole_sidebar = TERMY < 32;
@@ -2976,7 +2974,7 @@ void target_ui::init_window_and_input()
         }
     }
 
-    w_target = catacurses::newwin( height, width, point( TERMX - width, top ) );
+    w_target = catacurses::newwin( height, width, point( origin_x, top ) );
 
     ctxt = input_context( "TARGET" );
     ctxt.set_iso( true );
@@ -3925,7 +3923,6 @@ void target_ui::draw_ui_window()
 
     // Narrow layout removes the list of controls. This allows us
     // to have small window size and not suffer from it.
-    bool narrow = panel_manager::get_manager().get_current_layout().panels().begin()->get_width() <= 42;
     if( !narrow ) {
         draw_controls_list( text_y );
     }

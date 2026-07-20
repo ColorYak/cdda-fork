@@ -7178,14 +7178,11 @@ void game::zones_manager()
     const int zone_ui_height = 14;
     const int zone_options_height = debug_mode ? 6 : 7;
 
-    const bool sidebar_on_right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
-    const int sidebar_width = sidebar_on_right ?
-                              panel_manager::get_manager().get_width_right() :
-                              panel_manager::get_manager().get_width_left();
-    const int minimum_zone_ui_width = 45;
-    const int zone_ui_width = std::max( sidebar_width, minimum_zone_ui_width );
+    const panel_manager::anchored_overlay zones_overlay =
+        panel_manager::get_manager().sidebar_anchored_overlay( 45, 80 );
+    const int zone_ui_width = zones_overlay.width;
 
-    int offsetX = 0;
+    int offsetX = zones_overlay.origin_x;
     int max_rows = 0;
 
     catacurses::window w_zones;

@@ -2,7 +2,6 @@
 
 #include <algorithm> // min & max
 #include <memory>
-#include <string>
 
 #include "cached_options.h"
 #include "color.h"
@@ -10,7 +9,6 @@
 #include "cursesdef.h"
 #include "game.h"
 #include "map.h"
-#include "options.h"
 #include "output.h"
 #include "panels.h"
 #include "translations.h"
@@ -45,9 +43,8 @@ void live_view::show( const tripoint &p )
     if( !ui ) {
         ui = std::make_unique<ui_adaptor>();
         ui->on_screen_resize( [this, &here]( ui_adaptor & ui ) {
-            panel_manager &mgr = panel_manager::get_manager();
-            const bool sidebar_right = get_option<std::string>( "SIDEBAR_POSITION" ) == "right";
-            const int width = sidebar_right ? mgr.get_width_right() : mgr.get_width_left();
+            const auto [width, origin_x] =
+                panel_manager::get_manager().sidebar_anchored_overlay( 30, 60 );
 
             const int max_height = pixel_minimap_option ? TERMY / 2 : TERMY;
             const int line_limit = max_height - 2;
@@ -59,7 +56,7 @@ void live_view::show( const tripoint &p )
             const int live_view_box_height = std::min( max_height, std::max( line_out + 2, MIN_BOX_HEIGHT ) );
 
             win = catacurses::newwin( live_view_box_height, width,
-                                      point( sidebar_right ? TERMX - width : 0, 0 ) );
+                                      point( origin_x, 0 ) );
             ui.position_from_window( win );
         } );
         ui->on_redraw( [this, &here]( const ui_adaptor & ) {
