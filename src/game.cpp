@@ -7955,28 +7955,44 @@ look_around_result game::look_around(
     if( show_window ) {
         ui = std::make_unique<ui_adaptor>();
         ui->on_screen_resize( [&]( ui_adaptor & ui ) {
-            int panel_width = panel_manager::get_manager().get_current_layout().panels().begin()->get_width();
-            //FIXME: w_pixel_minimap is only reducing the height by one?
-            int height = pixel_minimap_option ? TERMY - getmaxy( w_pixel_minimap ) : TERMY;
+            panel_manager &mgr = panel_manager::get_manager();
+            const bool sidebar_present = mgr.has_sidebar();
+            const auto [la_w, default_la_x] = mgr.sidebar_anchored_overlay( 30, 60 );
 
-            // If particularly small, base height on panel width irrespective of other elements.
-            // Value here is attempting to get a square-ish result assuming 1x2 proportioned font.
-            if( height < panel_width / 2 ) {
-                height = panel_width / 2;
+            int height;
+            if( sidebar_present ) {
+                height = pixel_minimap_option ? TERMY - getmaxy( w_pixel_minimap ) : TERMY;
+
+                // If particularly small, base height on panel width irrespective of other elements.
+                // Value here is attempting to get a square-ish result assuming 1x2 proportioned font.
+                if( height < la_w / 2 ) {
+                    height = la_w / 2;
+                }
+            } else {
+                // No sidebar: dynamically size to content, like live_view.
+                // HACK: Bottom chrome: 3 control lines + bottom border = 4 rows.
+                constexpr int bottom_chrome = 4;
+                const int line_limit = TERMY - bottom_chrome;
+                const visibility_variables &vis_cache = here.get_visibility_variables_cache();
+                int line_out = 1;
+                w_info = catacurses::newwin( 1, la_w, point::zero ); // Measure with a dummy window.
+                pre_print_all_tile_info( lp, w_info, line_out, line_limit, vis_cache );
+                height = std::min( TERMY, line_out + bottom_chrome );
             }
 
             int la_y = 0;
-            int la_x = TERMX - panel_width;
+            int la_x = default_la_x;
             std::string position = get_option<std::string>( "LOOKAROUND_POSITION" );
             if( position == "left" ) {
-                if( get_option<std::string>( "SIDEBAR_POSITION" ) == "right" ) {
-                    la_x = panel_manager::get_manager().get_width_left();
+                if( !sidebar_present ) {
+                    la_x = 0;
+                } else if( get_option<std::string>( "SIDEBAR_POSITION" ) == "right" ) {
+                    la_x = mgr.get_width_left();
                 } else {
-                    la_x = panel_manager::get_manager().get_width_left() - panel_width;
+                    la_x = mgr.get_width_left() - la_w;
                 }
             }
             int la_h = height;
-            int la_w = panel_width;
             w_info = catacurses::newwin( la_h, la_w, point( la_x, la_y ) );
 
             ui.position_from_window( w_info );
@@ -8134,6 +8150,9 @@ look_around_result game::look_around(
         // Mark cata_tiles draw caches as dirty
         tilecontext->set_draw_cache_dirty();
 #endif
+        if( show_window && ui ) {
+            ui->mark_resize();
+        }
         invalidate_main_ui_adaptor();
         ui_manager::redraw();
 
