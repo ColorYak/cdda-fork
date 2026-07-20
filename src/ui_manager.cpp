@@ -1,5 +1,6 @@
 #include "ui_manager.h"
 
+#include <algorithm>
 #include <functional>
 #include <iterator>
 #include <optional>
@@ -517,6 +518,22 @@ void ui_adaptor::screen_resized()
     redraw();
 }
 
+std::vector<rectangle<point>> ui_adaptor::dimensions_above( const ui_adaptor &below )
+{
+    std::vector<rectangle<point>> result;
+    auto it = std::find_if( ui_stack.begin(), ui_stack.end(),
+    [&below]( const std::reference_wrapper<ui_adaptor> &r ) {
+        return &r.get() == &below;
+    } );
+    if( it == ui_stack.end() ) {
+        return result;
+    }
+    for( ++it; it != ui_stack.end(); ++it ) {
+        result.push_back( it->get().dimensions );
+    }
+    return result;
+}
+
 background_pane::background_pane()
 {
     if( !test_mode ) {
@@ -565,5 +582,10 @@ void reset()
     for( ui_adaptor &adaptor : ui_stack ) {
         adaptor.shutdown();
     }
+}
+
+std::vector<rectangle<point>> dimensions_above( const ui_adaptor &below )
+{
+    return ui_adaptor::dimensions_above( below );
 }
 } // namespace ui_manager

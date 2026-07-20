@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <memory>
+#include <vector>
 
 #include "cuboid_rectangle.h"
 #include "point.h"
@@ -231,6 +232,13 @@ class ui_adaptor
         static void redraw();
         static void redraw_invalidated();
         static void screen_resized();
+
+        /**
+         * Dimensions of every `ui_adaptor` stacked above `below` (i.e. drawn
+         * after it), in the same coordinate space as the `dimensions` member.
+         * Used to detect overlay menus obscuring lower content.
+         **/
+        static std::vector<rectangle<point>> dimensions_above( const ui_adaptor &below );
     private:
         static void invalidation_consistency_and_optimization();
 
@@ -297,6 +305,11 @@ void redraw_invalidated();
 void screen_resized();
 void invalidate_all_ui_adaptors();
 void reset();
+/**
+ * Dimensions of every `ui_adaptor` stacked above `below`. See
+ * `ui_adaptor::dimensions_above`.
+ **/
+std::vector<rectangle<point>> dimensions_above( const ui_adaptor &below );
 } // namespace ui_manager
 
 #endif // CATA_SRC_UI_MANAGER_H
