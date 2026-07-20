@@ -1232,6 +1232,59 @@ void cata_tiles::draw_om( const point &dest, const tripoint_abs_omt &center_abs_
                   "SDL_RenderSetClipRect failed" );
 }
 
+static SDL_BlendMode get_clamp_blend_mode()
+{
+    static const SDL_BlendMode mode = SDL_ComposeCustomBlendMode(
+            SDL_BLENDFACTOR_ONE,             // srcColorFactor
+            SDL_BLENDFACTOR_ONE,             // dstColorFactor
+            SDL_BLENDOPERATION_MINIMUM,      // colorOperation: min(src, dst)
+            SDL_BLENDFACTOR_ZERO,            // srcAlphaFactor
+            SDL_BLENDFACTOR_ONE,             // dstAlphaFactor: keep dst alpha
+            SDL_BLENDOPERATION_ADD );
+    return mode;
+}
+
+static bool clamp_blend_supported()
+{
+    static const bool supported = []() -> bool {
+        if( !renderer ) {
+            return false;
+        }
+        SDL_BlendMode prev = SDL_BLENDMODE_NONE;
+        if( SDL_GetRenderDrawBlendMode( renderer.get(), &prev ) != 0 ) {
+            return false;
+        }
+        const bool ok = SDL_SetRenderDrawBlendMode( renderer.get(),
+                        get_clamp_blend_mode() ) == 0;
+        SDL_SetRenderDrawBlendMode( renderer.get(), prev );
+        return ok;
+    }();
+    return supported;
+}
+
+// Translucent backdrop: out_c = min( dst_c * gain_c, cap ). gain
+// interpolates between a uniform "dim" (no hue leveling) and a "level"
+// gain whose inverse-luminance weights (green suppressed, red mid, blue
+// kept) push hue-only differences toward a roughly uniform brightness
+// instead of a flat box, while staying dark. Blue's level gain is clamped
+// to 1.0 because SDL_BLENDMODE_MOD can't encode a factor > 1. Retune with
+// these two numbers; the MOD color derives from them.
+constexpr double backdrop_strength = 0.85;   // 0 = dim (uniform), 1 = level
+constexpr std::uint8_t backdrop_cap = 12;   // overall darkness; darker = lower
+
+constexpr std::array<double, 3> backdrop_dim_gain{ 0.376, 0.376, 0.376 };
+constexpr std::array<double, 3> backdrop_level_gain{ 0.588, 0.176, 1.0 };
+
+static constexpr std::uint8_t backdrop_gain_u8( int c )
+{
+    const double g = backdrop_dim_gain[c]
+                     + ( backdrop_strength * ( backdrop_level_gain[c] - backdrop_dim_gain[c] ) );
+    // The gains are always positive, so ( x + 0.5 ) truncation rounds
+    // correctly; std::lround would be clearer but isn't constexpr before C++23.
+    // NOLINTNEXTLINE(bugprone-incorrect-roundings)
+    return static_cast<std::uint8_t>( ( g * 255.0 ) + 0.5 );
+}
+
 static bool draw_window( Font_Ptr &font, const catacurses::window &w, const point &offset )
 {
     if( scaling_factor > 1 ) {
@@ -1256,9 +1309,48 @@ static bool draw_window( Font_Ptr &font, const catacurses::window &w, const poin
         // only clearing those lines that are touched, we avoid
         // clearing lines that were already drawn in a previous
         // window but are untouched in this one.
-        geometry->rect( renderer, point( win->pos.x * font->width, ( win->pos.y + j ) * font->height ),
-                        win->width * font->width, font->height,
-                        color_as_sdl( catacurses::black ) );
+        const catacurses::window_backdrop backdrop = win->effective_backdrop();
+        // The translucent passes rely on the custom MINIMUM blend to clamp;
+        // on renderers that reject it, fall back to an opaque fill.
+        const bool draw_opaque = backdrop == catacurses::window_backdrop::opaque
+                                 || ( backdrop == catacurses::window_backdrop::translucent
+                                      && !clamp_blend_supported() );
+        if( draw_opaque ) {
+            geometry->rect( renderer,
+                            point( win->pos.x * font->width, ( win->pos.y + j ) * font->height ),
+                            win->width * font->width, font->height,
+                            color_as_sdl( catacurses::black ) );
+        } else if( backdrop == catacurses::window_backdrop::translucent ) {
+            SDL_BlendMode prev_mode;
+            GetRenderDrawBlendMode( renderer, prev_mode );
+            const SDL_Rect clear_rect{
+                win->pos.x * font->width,
+                ( win->pos.y + j ) * font->height,
+                win->width * font->width,
+                font->height,
+            };
+            // Translucent backdrop in two per-channel passes:
+            //   out_c = min( dst_c * gain_c, cap )
+            // Pass 1 multiplies the terrain by a per-channel gain, an
+            // inverse-luminance "level" weighting (green suppressed, red
+            // mid, blue kept) so terrains that differ only in hue land at
+            // a roughly uniform brightness instead of a flat box, while
+            // staying dark. SDL_BLENDMODE_MOD is dst = src * dst per
+            // channel; it can't encode a factor > 1, so blue's gain is
+            // clamped to 1.0 (255).
+            SetRenderDrawBlendMode( renderer, SDL_BLENDMODE_MOD );
+            SetRenderDrawColor( renderer, backdrop_gain_u8( 0 ), backdrop_gain_u8( 1 ),
+                                backdrop_gain_u8( 2 ), 255 );
+            RenderFillRect( renderer, &clear_rect );
+            // Pass 2 clamps every channel to a dark cap via a MINIMUM
+            // blend, which leaves already-darker pixels untouched
+            // (preserving structure) while holding the backdrop in a band
+            // that keeps text legible.
+            SetRenderDrawBlendMode( renderer, get_clamp_blend_mode() );
+            SetRenderDrawColor( renderer, backdrop_cap, backdrop_cap, backdrop_cap, 255 );
+            RenderFillRect( renderer, &clear_rect );
+            SetRenderDrawBlendMode( renderer, prev_mode );
+        }
         update = true;
         win->line[j].touched = false;
         for( int i = 0; i < win->width; i++ ) {
@@ -1483,8 +1575,12 @@ void cata_cursesport::curses_drawwindow( const catacurses::window &w )
         // TODO: Figure out how to properly make the minimap code do whatever it is this does
         draw_window( font, w );
 
-        // Make sure the entire minimap window is black before drawing.
-        clear_window_area( w );
+        // Full-area clear wipes lines the window didn't touch this frame,
+        // which lazily-repainted callers rely on. Translucent callers must
+        // repaint every frame so `draw_window`'s per-line fills suffice.
+        if( win->effective_backdrop() == catacurses::window_backdrop::opaque ) {
+            clear_window_area( w );
+        }
         tilecontext->draw_minimap(
             point( win->pos.x * fontwidth, win->pos.y * fontheight ),
         { get_player_character().pos_bub().xy(), g->ter_view_p.z() },
