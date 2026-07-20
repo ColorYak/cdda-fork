@@ -3964,7 +3964,9 @@ shared_ptr_fast<ui_adaptor> game::create_or_get_main_ui_adaptor()
             w_minimap = w_minimap_ptr = catacurses::newwin( MINIMAP_HEIGHT, MINIMAP_WIDTH, point::zero );
 
             // need to init in order to avoid crash. gets updated by the panel code.
-            w_pixel_minimap = catacurses::newwin( 1, 1, point::zero );
+            if( !w_pixel_minimap ) {
+                w_pixel_minimap = catacurses::newwin( 1, 1, point::zero );
+            }
 
             ui.position_from_window( catacurses::stdscr );
         } );
