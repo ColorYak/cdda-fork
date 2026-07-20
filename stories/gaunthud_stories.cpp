@@ -9,6 +9,7 @@
 
 #include "cursesdef.h"
 #include "gaunthud_world_render.h"
+#include "gaunthud_stamina_render.h"
 #include "gaunthud_safemode_render.h"
 #include "gaunthud_cells.h"
 #include "move_mode.h"
@@ -19,6 +20,7 @@ namespace
 {
 
 namespace W = gaunthud::world;
+namespace S = gaunthud::stamina;
 namespace SM = gaunthud::safemode;
 namespace fs = std::filesystem;
 
@@ -141,6 +143,26 @@ std::vector<world_story> world_stories()
     };
 }
 
+struct stamina_story {
+    std::string slug;
+    std::string label;
+    S::stamina_data data;
+};
+
+std::vector<stamina_story> stamina_stories()
+{
+    constexpr int M = 10000;
+    return {
+        { "walk-full",       "Walking, full",                { 10000, 10000, M, move_mode_type::WALKING } },
+        { "walk-losing",     "Walking, losing stamina",      {  7000,  8000, M, move_mode_type::WALKING } },
+        { "run-half",        "Running, half",                {  5000,  5000, M, move_mode_type::RUNNING } },
+        { "run-half-losing", "Running, half, losing",        {  5000,  6000, M, move_mode_type::RUNNING } },
+        { "crouch-low",      "Crouching, low (<25%)",        {  2000,  2000, M, move_mode_type::CROUCHING } },
+        { "crouch-low-losing", "Crouching, low, losing",    {  2000,  3000, M, move_mode_type::CROUCHING } },
+        { "prone-empty",     "Prone, empty",                 {     0,  1000, M, move_mode_type::PRONE } },
+    };
+}
+
 struct safemode_story {
     std::string slug;
     std::string label;
@@ -189,6 +211,23 @@ void run( const storybook::config &cfg )
         std::printf( "  %s\n", png.string().c_str() );
 
         world_section.entries.push_back( { s.slug, s.label, png_name } );
+    }
+
+    storybook::section stamina_section{ "Stamina variants", {} };
+    for( const stamina_story &s : stamina_stories() ) {
+        const gaunthud::cells::render_result r = S::render( s.data );
+        catacurses::window w = catacurses::newwin(
+                                   r.size.height, r.size.width, point::zero );
+        gaunthud::cells::paint( w, r.buffer );
+
+        const std::string png_name = "stamina-" + s.slug + ".png";
+        const fs::path png = cfg.out_dir / png_name;
+        if( !storybook::paint_window_to_png( w, png ) ) {
+            std::exit( 1 );
+        }
+        std::printf( "  %s\n", png.string().c_str() );
+
+        stamina_section.entries.push_back( { s.slug, s.label, png_name } );
     }
 
     storybook::section safemode_section{ "Safe mode variants", {} };
